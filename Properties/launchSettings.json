@@ -3,16 +3,16 @@
     "DiscordIrcBridge": {
       "commandName": "Project",
       "environmentVariables": {
-        "DISCORD_GUILDID": "756747846337691649",
-        "DISCORD_TOKEN": "NzU3MDU1MDU5MDE1MjM3NjYz.X2a0dw.Ks-GoIKGvYHfpvhqwcxEsyp_9pI",
+        "DISCORD_GUILDID": "YOUR_GUILD_ID_HERE",
+        "DISCORD_TOKEN": "YOUR_TOKEN_HERE",
         "DISCORD_COMMANDPREFIX": "!"
       }
     },
     "Docker": {
       "commandName": "Docker",
       "environmentVariables": {
-        "DISCORD_GUILDID": "756747846337691649",
-        "DISCORD_TOKEN": "NzU3MDU1MDU5MDE1MjM3NjYz.X2a0dw.Ks-GoIKGvYHfpvhqwcxEsyp_9pI",
+        "DISCORD_GUILDID": "YOUR_GUILD_ID_HERE",
+        "DISCORD_TOKEN": "YOUR_TOKEN_HERE",
         "DISCORD_COMMANDPREFIX": "!"
       }
     }
