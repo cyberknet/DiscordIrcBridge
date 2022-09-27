@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.4.32912.340
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DiscordIrcBridge", "DiscordIrcBridge.csproj", "{6B298488-3175-4362-93E1-9DF6A25A0514}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{6B298488-3175-4362-93E1-9DF6A25A0514}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6B298488-3175-4362-93E1-9DF6A25A0514}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6B298488-3175-4362-93E1-9DF6A25A0514}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6B298488-3175-4362-93E1-9DF6A25A0514}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {A8473BDD-5DB4-4C25-A2E7-0330ED307D6A}
+	EndGlobalSection
+EndGlobal
