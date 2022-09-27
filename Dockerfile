@@ -15,8 +15,12 @@ FROM build AS publish
 RUN dotnet publish "DiscordIrcBridge.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
 FROM base AS final
+LABEL product="Discord IRC Bridge"
+LABEL vendor="Scott Blomfield"
+LABEL email="github@cyberknet.net"
+LABEL github_url="https://github.com/cyberknet/discordircbridge"
 WORKDIR /app
-VOLUME /data
+VOLUME ["/data"]
 COPY --from=publish /app/publish .
 
 ENTRYPOINT ["dotnet", "DiscordIrcBridge.dll"]
