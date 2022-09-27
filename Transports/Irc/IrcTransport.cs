@@ -30,7 +30,7 @@ namespace DiscordIrcBridge.Transports.Irc
 
         public List<IrcUser> _trackedUsers = new();
         // Internal and exposable collection of all clients that communicate individually with servers.
-        public BridgeBot? BridgeBot { get; private set; }
+        public BridgeConnection? BridgeBot { get; private set; }
 
         public IrcTransport(IrcConfiguration ircConfiguration, MappingConfiguration mappingConfiguration, IServiceProvider serviceProvider, ILogger<IrcTransport> log, Statistics statistics)
         {
@@ -50,8 +50,8 @@ namespace DiscordIrcBridge.Transports.Irc
                 Password = _configuration.Password
             };
 
-            BridgeBot = _serviceProvider.GetRequiredService<BridgeBot>();
-            BridgeBot.FloodPreventer = new IrcStandardFloodPreventer(4, 2000);
+            BridgeBot = _serviceProvider.GetRequiredService<BridgeConnection>();
+            BridgeBot.FloodPreventer = new IrcStandardFloodPreventer(_configuration.FloodMaxMessageBurst, _configuration.FloodCounterPeriod);
             BridgeBot.Connected += BridgeBot_Connected;
             BridgeBot.Disconnected += BridgeBot_Disconnected;
             BridgeBot.Registered += BridgeBot_Registered;

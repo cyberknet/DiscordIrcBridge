@@ -114,7 +114,7 @@ namespace DiscordIrcBridge
             //        );
             services.AddSingleton<IrcConfiguration>(irc);
             services.AddSingleton<IrcTransport>();
-            services.AddTransient<BridgeBot>();
+            services.AddTransient<BridgeConnection>();
 
 
             // DISCORD CLASSES

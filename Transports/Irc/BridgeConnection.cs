@@ -11,17 +11,17 @@ using System.Threading.Tasks;
 
 namespace DiscordIrcBridge.Transports.Irc
 {
-    public class BridgeBot : StandardIrcClient, IDisposable
+    public class BridgeConnection : StandardIrcClient, IDisposable
     {
         private bool _isDisposed = false;
         private readonly IrcConfiguration _configuration;
-        private readonly ILogger<BridgeBot> _log;
-        public BridgeBot(IrcConfiguration configuration, ILogger<BridgeBot> log)
+        private readonly ILogger<BridgeConnection> _log;
+        public BridgeConnection(IrcConfiguration configuration, ILogger<BridgeConnection> log)
         {
             _configuration = configuration;
             _log = log;
         }
-        ~BridgeBot()
+        ~BridgeConnection()
         {
             Dispose(false);
         }

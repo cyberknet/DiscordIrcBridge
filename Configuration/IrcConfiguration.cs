@@ -16,10 +16,10 @@ namespace DiscordIrcBridge.Configuration
         public string Server { get; set; } = "";
         public int Port { get; set; } = 6667;
         public int ConnectionTimeout { get; set; } = 30000;
-        public int ClientQuitTimeout { get; set; }
+        public int ClientQuitTimeout { get; set; } = 15000;
         public string QuitMessage { get; set; } = "DiscordIRCBridge Bot";
 
-        public int FloodMaxMessageBurst { get; set; }
-        public int floodCounterPeriod { get; set; }
+        public int FloodMaxMessageBurst { get; set; } = 4;
+        public int FloodCounterPeriod { get; set; } = 2000;
     }
 }
