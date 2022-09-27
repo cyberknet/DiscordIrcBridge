@@ -69,7 +69,7 @@ namespace DiscordIrcBridge.Transports.Irc
                 {
                     _log.LogInformation("Timeout while connecting to IRC server");
                     BridgeBot.Dispose();
-                    ConsoleUtilities.WriteError("Connection to '{0}' timed out.", _configuration.Server);
+                    _log.LogError("Connection to '{0}' timed out.", _configuration.Server);
                     return;
                 }
             }
@@ -80,7 +80,7 @@ namespace DiscordIrcBridge.Transports.Irc
             switch (e.Code)
             {
                 case 433: // Nickname in use
-                    BridgeBot.LocalUser.SetNickName(_configuration.AlternateNickname);
+                    BridgeBot?.LocalUser.SetNickName(_configuration.AlternateNickname);
                     break;
                 default:
                     _log.LogCritical($"Error while connected to IRC: {e.Code} - {e.Message}");
