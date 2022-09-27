@@ -96,13 +96,13 @@ No executable files are published for installation, however the source code is a
 
 ### Configuration Files
 The bot will store its configuration files in /data or C:\data (depending on UNIX or Windows)
-####discord.json
+#### discord.json
 Stores information about its Discord connection including Server/Guild Id, and Bot Token.
-####irc.json
+#### irc.json
 Stores information about its IRC connection
-####mapping.json
+#### mapping.json
 Stores information about which discord channels are mapped to which IRC channels, as well as what Discord usernames are mapped to a given IRC username.
-####statistics.json
+#### statistics.json
 Keeps some running statistics about the bot including uptime and messages processed.
-####log files
+#### log files
 The bot will keep a set of rolling 7 day log files.
