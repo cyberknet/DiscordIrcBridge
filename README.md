@@ -1,6 +1,6 @@
 # DiscordIrcBridge
-Creates a bridge between Discord and IRC, moving messages back and forth 
-between them.
+This project creates a bridge between Discord and IRC, orchestrating messages 
+back and forth between the two services.
 
 ## Installation
 Installation consists of creating a bot on the Discord website, running the bot
@@ -38,10 +38,12 @@ Additionally, when a discord user changes their nickname or picture, the
 messages posted through the webhook will not be updated.
 
 ## Commands
-[Bot Command Reference](Documentation/CommandReference.md)
+Usage of the bot is thoroughly documented in the 
+[Bot Command Reference](Documentation/CommandReference.md).
 
 ## Configuration and Logging
-[Configuration And Logging](Documentation/ConfigurationAndLogging.md)
+Documentation of our configuration and loggile files can be located on the 
+[Configuration And Logging](Documentation/ConfigurationAndLogging.md) page.
 
 ## Conduct and Contribution
 Our project has a [code of conduct](CODE_OF_CONDUCT.md). Because we value
