@@ -1,5 +1,0 @@
-﻿services:
-	discordircbridge:
-		image: sblomfield/discordircbridge
-volumes:
-	data:/data

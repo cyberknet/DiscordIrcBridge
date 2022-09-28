@@ -34,13 +34,6 @@ namespace DiscordIrcBridge
                 var logConfig = new LoggerConfiguration()
                     .MinimumLevel.ControlledBy(lls)
                     .ReadFrom.Configuration(configuration);
-                //.WriteTo.Console(theme: AnsiConsoleTheme.Code, outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}")
-                //.WriteTo.File("/data/{Date}-discordircbot2.log", rollingInterval: RollingInterval.Day, retainedFileCountLimit: 7);
-                //if (discordConfig.DebugChannelWebhookId.HasValue && !string.IsNullOrWhiteSpace(discordConfig.DebugChannelWebhookToken))
-                //{
-                //    logConfig.WriteTo.Discord(discordConfig.DebugChannelWebhookId.Value, discordConfig.DebugChannelWebhookToken);
-                //}
-                //logConfig.Enrich.FromLogContext();
 
                 Log.Logger = logConfig.CreateLogger();
                 Log.Logger.Information("Starting Up");
@@ -100,27 +93,17 @@ namespace DiscordIrcBridge
             var irc = ConfigurationHelper.LoadIrcConfiguration();
             var statistics = ConfigurationHelper.LoadStatistics();
 
-            //services.AddSingleton<ConfigurationFactory>();
             services.AddSingleton<Statistics>(statistics);
             services.AddSingleton<Bridge>();
-            //services.AddSingleton<MappingConfiguration>(serviceProvider =>
-            //            serviceProvider.GetRequiredService<ConfigurationFactory>().Mapping
-            //        );
             services.AddSingleton<MappingConfiguration>(mapping);
 
             // IRC CLASSES
-            //services.AddSingleton<IrcConfiguration>(serviceProvider =>
-            //            serviceProvider.GetRequiredService<ConfigurationFactory>().Irc
-            //        );
             services.AddSingleton<IrcConfiguration>(irc);
             services.AddSingleton<IrcTransport>();
             services.AddTransient<BridgeConnection>();
 
 
             // DISCORD CLASSES
-            //services.AddSingleton<DiscordConfiguration>(serviceProvider =>
-            //    serviceProvider.GetRequiredService<ConfigurationFactory>().Discord
-            //);
             services.AddSingleton<DiscordConfiguration>(discord);
             services.AddSingleton<DiscordTransport>();
             services.AddSingleton<DiscordSocketConfig>();

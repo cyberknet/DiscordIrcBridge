@@ -337,10 +337,10 @@ namespace DiscordIrcBridge.Transports.Discord
                 {
                     var imc = socketChannel as IMessageChannel;
                     string username = mappedUser != null ? mappedUser.Username : message.User;
-                    string messageText =$"<{username}> {message.Text}";
+                    string messageText =$"<{username}> {text}";
                     if (imc != null)
                     {
-                        await imc.SendMessageAsync(text: text, allowedMentions: allowedMentions);
+                        await imc.SendMessageAsync(text: messageText, allowedMentions: allowedMentions);
                     }
                 }
                 

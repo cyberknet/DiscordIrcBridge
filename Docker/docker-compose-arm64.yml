@@ -1,0 +1,5 @@
+﻿services:
+    discordircbridge:
+        image: sblomfield/discordircbridge:arm64
+volumes:
+    data:/data
