@@ -1,7 +1,7 @@
 #See https://aka.ms/containerfastmode to understand how Visual Studio uses this Dockerfile to build your images for faster debugging.
 
 # amd64
- FROM mcr.microsoft.com/dotnet/runtime:7.0 AS base
+FROM mcr.microsoft.com/dotnet/runtime:7.0 AS base
 # arm64v8
 #FROM mcr.microsoft.com/dotnet/nightly/runtime:7.0-jammy-arm64v8 AS base
 WORKDIR /app

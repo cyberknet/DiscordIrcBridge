@@ -3,6 +3,7 @@ using DiscordIrcBridge.Messages;
 using DiscordIrcBridge.Transports;
 using DiscordIrcBridge.Transports.Discord;
 using DiscordIrcBridge.Transports.Irc;
+using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -21,25 +22,41 @@ namespace DiscordIrcBridge
         private readonly MappingConfiguration _mappingConfiguration;
         private readonly DiscordConfiguration _discordConfiguration;
         private readonly IrcConfiguration _ircConfiguration;
+        private readonly IServiceProvider _serviceProvider;
         private readonly Statistics _statistics;
+        private IrcTransport _ircTransport;
+        private DiscordTransport _discordTransport;
 
         private System.Timers.Timer _autoSaveTimer;
 
         public bool IrcIsConnected { get; set;  }
 
-        public Bridge(DiscordTransport discordTransport, IrcTransport ircTransport, IrcConfiguration ircConfiguration, DiscordConfiguration discordConfiguration, MappingConfiguration mappingConfiguration, Statistics statistics)
+        public Bridge(IrcConfiguration ircConfiguration, DiscordConfiguration discordConfiguration, MappingConfiguration mappingConfiguration, Statistics statistics, IServiceProvider serviceProvider)
         {
-            _transports.Add(discordTransport);
-            _transports.Add(ircTransport);
             _ircConfiguration = ircConfiguration;
             _discordConfiguration = discordConfiguration;
             _mappingConfiguration = mappingConfiguration;
             _statistics = statistics;
+            _serviceProvider = serviceProvider;
+
+            _discordTransport = serviceProvider.GetRequiredService<DiscordTransport>();
+            _ircTransport = serviceProvider.GetRequiredService<IrcTransport>();
+            _ircTransport.Disconnected += IrcTransport_Disconnected;
+            _transports.Add(_discordTransport);
+            _transports.Add(_ircTransport);
 
             _autoSaveTimer = new System.Timers.Timer();
             _autoSaveTimer.Elapsed += AutoSaveTimer_Elapsed;
             _autoSaveTimer.Interval = TimeSpan.FromSeconds(60).TotalMilliseconds;
             _autoSaveTimer.Enabled = true;
+        }
+
+        private void IrcTransport_Disconnected(object? sender, EventArgs e)
+        {
+            _ircTransport.Dispose();
+            _transports.Remove(_ircTransport);
+            _ircTransport = _serviceProvider.GetRequiredService<IrcTransport>();
+            _transports.Add(_ircTransport);
         }
 
         ~Bridge()

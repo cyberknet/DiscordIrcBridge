@@ -19,7 +19,7 @@ using System.Threading.Tasks;
 
 namespace DiscordIrcBridge.Transports.Irc
 {
-    public class IrcTransport : TransportBase
+    public class IrcTransport : TransportBase, IDisposable
     {
         private readonly IrcConfiguration _configuration;
         private readonly MappingConfiguration _mappingConfiguration;
@@ -28,9 +28,11 @@ namespace DiscordIrcBridge.Transports.Irc
         private readonly Statistics _statistics;
         private int _maximumLineLength = 425;
 
+        public event EventHandler<EventArgs>? Disconnected;
+
         public List<IrcUser> _trackedUsers = new();
         // Internal and exposable collection of all clients that communicate individually with servers.
-        public BridgeConnection? BridgeBot { get; private set; }
+        public BridgeConnection? BridgeConnection { get; private set; }
 
         public IrcTransport(IrcConfiguration ircConfiguration, MappingConfiguration mappingConfiguration, IServiceProvider serviceProvider, ILogger<IrcTransport> log, Statistics statistics)
         {
@@ -50,25 +52,25 @@ namespace DiscordIrcBridge.Transports.Irc
                 Password = _configuration.Password
             };
 
-            BridgeBot = _serviceProvider.GetRequiredService<BridgeConnection>();
-            BridgeBot.FloodPreventer = new IrcStandardFloodPreventer(_configuration.FloodMaxMessageBurst, _configuration.FloodCounterPeriod);
-            BridgeBot.Connected += BridgeBot_Connected;
-            BridgeBot.Disconnected += BridgeBot_Disconnected;
-            BridgeBot.Registered += BridgeBot_Registered;
-            BridgeBot.ServerSupportedFeaturesReceived += BridgeBot_ServerSupportedFeaturesReceived;
-            BridgeBot.Error += BridgeBot_Error;
-            BridgeBot.ProtocolError += BridgeBot_ProtocolError;
+            BridgeConnection = _serviceProvider.GetRequiredService<BridgeConnection>();
+            BridgeConnection.FloodPreventer = new IrcStandardFloodPreventer(_configuration.FloodMaxMessageBurst, _configuration.FloodCounterPeriod);
+            BridgeConnection.Connected += BridgeBot_Connected;
+            BridgeConnection.Disconnected += BridgeBot_Disconnected;
+            BridgeConnection.Registered += BridgeBot_Registered;
+            BridgeConnection.ServerSupportedFeaturesReceived += BridgeBot_ServerSupportedFeaturesReceived;
+            BridgeConnection.Error += BridgeBot_Error;
+            BridgeConnection.ProtocolError += BridgeBot_ProtocolError;
 
             using (var connectedEvent = new ManualResetEventSlim(false))
             {
                 // following line makes sure that if we connect we don't dispose the bot!
-                BridgeBot.Connected += (s2, e2) => connectedEvent.Set();
+                BridgeConnection.Connected += (s2, e2) => connectedEvent.Set();
 
-                BridgeBot.Connect();
+                BridgeConnection.Connect();
                 if (!connectedEvent.Wait(10000))
                 {
                     _log.LogInformation("Timeout while connecting to IRC server");
-                    BridgeBot.Dispose();
+                    BridgeConnection.Dispose();
                     _log.LogError("Connection to '{0}' timed out.", _configuration.Server);
                     return;
                 }
@@ -80,7 +82,7 @@ namespace DiscordIrcBridge.Transports.Irc
             switch (e.Code)
             {
                 case 433: // Nickname in use
-                    BridgeBot?.LocalUser.SetNickName(_configuration.AlternateNickname);
+                    BridgeConnection?.LocalUser.SetNickName(_configuration.AlternateNickname);
                     break;
                 default:
                     _log.LogCritical($"Error while connected to IRC: {e.Code} - {e.Message}");
@@ -97,7 +99,7 @@ namespace DiscordIrcBridge.Transports.Irc
 
         private void BridgeBot_ServerSupportedFeaturesReceived(object? sender, EventArgs e)
         {
-            BridgeBot.ServerSupportedFeatures.TryGetValue("LINELEN", out string str);
+            BridgeConnection.ServerSupportedFeatures.TryGetValue("LINELEN", out string str);
             if (!string.IsNullOrEmpty(str))
             {
                 if (Int32.TryParse(str, out int lineLength))
@@ -111,11 +113,11 @@ namespace DiscordIrcBridge.Transports.Irc
         public void Disconnect()
         {
             _log.LogInformation("Disconnecting from IRC");
-            if (BridgeBot != null)
+            if (BridgeConnection != null)
             {
-                BridgeBot.Disconnect();
-                BridgeBot.Dispose();
-                BridgeBot = null;
+                BridgeConnection.Disconnect();
+                BridgeConnection.Dispose();
+                BridgeConnection = null;
                 if (Bridge != null)
                 {
                     Bridge.IrcIsConnected = false;
@@ -145,24 +147,37 @@ namespace DiscordIrcBridge.Transports.Irc
             if (Bridge != null)
             {
                 Bridge.IrcIsConnected = false;
+                var message = new DisconnectMessage();
+                Bridge.Broadcast(this, message);
+                this.OnDisconnected();
+            }
+        }
+
+        protected void OnDisconnected()
+        {
+            var handler = this.Disconnected;
+            if (handler != null)
+            {
+                handler(this, EventArgs.Empty);
             }
         }
 
         private void BridgeBot_Connected(object? sender, EventArgs e)
         {
             _log.LogInformation("Connected to IRC Server");
+
         }
 
         private void BridgeBot_Registered(object? sender, EventArgs e)
         {
-            if (BridgeBot != null)
+            if (BridgeConnection != null)
             {
-                BridgeBot.LocalUser.JoinedChannel += LocalUser_JoinedChannel;
-                BridgeBot.LocalUser.LeftChannel += LocalUser_LeftChannel;
+                BridgeConnection.LocalUser.JoinedChannel += LocalUser_JoinedChannel;
+                BridgeConnection.LocalUser.LeftChannel += LocalUser_LeftChannel;
 
                 _log.LogInformation("Registered with IRC server, connecting to channels");
                 var channels = _mappingConfiguration.Channels.Select(c => c.IrcChannelName).ToArray();
-                BridgeBot?.Channels.Join(channels);
+                BridgeConnection?.Channels.Join(channels);
 
                 ConnectMessage cm = new ConnectMessage();
                 if (Bridge != null)
@@ -230,10 +245,10 @@ namespace DiscordIrcBridge.Transports.Irc
 
         private void User_Quit(object? sender, IrcCommentEventArgs e)
         {
-            if ((BridgeBot != null) && (sender is IrcUser user))
+            if ((BridgeConnection != null) && (sender is IrcUser user))
             {
                 _log.LogDebug($"IRC User {user.NickName} quit: {e.Comment}");
-                foreach (var channel in BridgeBot.Channels)
+                foreach (var channel in BridgeConnection.Channels)
                 {
                     bool found = false;
                     foreach (var channelUser in channel.Users)
@@ -349,7 +364,7 @@ namespace DiscordIrcBridge.Transports.Irc
             if (message is MapChannelMessage mapMessage)
             {
                 bool alreadyJoined = false;
-                foreach (var channel in BridgeBot.Channels)
+                foreach (var channel in BridgeConnection.Channels)
                 {
                     if (channel.Name.ToLower().Trim() == mapMessage.ChannelMapping.IrcChannelName.ToLower().Trim())
                     {
@@ -359,7 +374,7 @@ namespace DiscordIrcBridge.Transports.Irc
                 }
                 if (!alreadyJoined)
                 {
-                    BridgeBot.Channels.Join(mapMessage.ChannelMapping.IrcChannelName);
+                    BridgeConnection.Channels.Join(mapMessage.ChannelMapping.IrcChannelName);
                 }
             }
             if (message is TextMessage textMessage)
@@ -379,7 +394,7 @@ namespace DiscordIrcBridge.Transports.Irc
                         if (messageText.Length <= maxLength)
                         {
                             // post the message
-                            BridgeBot?.LocalUser.SendMessage(mapping.IrcChannel, nickPrefix + messageText);
+                            BridgeConnection?.LocalUser.SendMessage(mapping.IrcChannel, nickPrefix + messageText);
                         }
                         else
                         {
@@ -398,7 +413,7 @@ namespace DiscordIrcBridge.Transports.Irc
                                 else if (messageBuilder.Length == 0)
                                 {
                                     string word = nextWord.Substring(0, maxLength);
-                                    BridgeBot?.LocalUser.SendMessage(mapping.IrcChannel, nickPrefix + word);
+                                    BridgeConnection?.LocalUser.SendMessage(mapping.IrcChannel, nickPrefix + word);
                                     list[0] = list[0].Substring(maxLength);
                                 }
                                 else
@@ -406,7 +421,7 @@ namespace DiscordIrcBridge.Transports.Irc
                                     // get the message
                                     messageText = messageBuilder.ToString().Trim();
                                     // send the message
-                                    BridgeBot?.LocalUser.SendMessage(mapping.IrcChannel, nickPrefix + messageText);
+                                    BridgeConnection?.LocalUser.SendMessage(mapping.IrcChannel, nickPrefix + messageText);
                                     // clear the message builder
                                     messageBuilder.Length = 0;
                                 }
@@ -417,7 +432,7 @@ namespace DiscordIrcBridge.Transports.Irc
                                 // get the message
                                 messageText = messageBuilder.ToString().Trim();
                                 // send the message
-                                BridgeBot?.LocalUser.SendMessage(mapping.IrcChannel, nickPrefix + messageText);
+                                BridgeConnection?.LocalUser.SendMessage(mapping.IrcChannel, nickPrefix + messageText);
                             }
                         }
                     }
@@ -491,6 +506,14 @@ namespace DiscordIrcBridge.Transports.Irc
                 !string.IsNullOrWhiteSpace(_configuration.Server) &&
                 _configuration.Port > 0 &&
                 _configuration.Port < 65535;
+        }
+
+        public void Dispose()
+        {
+            if (this.BridgeConnection != null)
+            {
+                this.BridgeConnection.Dispose();
+            }
         }
     }
 }

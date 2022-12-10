@@ -78,7 +78,8 @@ namespace DiscordIrcBridge.Transports.Discord
 
                 TextMessage textMessage = new TextMessage();
                 textMessage.Channel = message.Channel.Name;
-                textMessage.Text = imessage.CleanContent;
+                string ircContent = imessage.Content.FromMarkdownToIrc(_client);
+                textMessage.Text = ircContent;
                 textMessage.User = guildUser.DisplayName;
                 if (!_statistics.ChannelMessages.ContainsKey(message.Channel.Id))
                     _statistics.ChannelMessages.Add(message.Channel.Id, 1);
