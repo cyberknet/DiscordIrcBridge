@@ -141,14 +141,14 @@ namespace DiscordIrcBridge.Transports.Discord.Modules
             {
                 EmbedBuilder embed = new EmbedBuilder();
                 embed.WithTitle("IRC Users")
-                     .WithDescription("The following users are online in " + mapping?.IrcChannel?.Name);
+                     .WithDescription($"The following users are online in <#{mapping?.DiscordChannelId}>");
                 StringBuilder discord = new StringBuilder();
                 StringBuilder irc = new StringBuilder();
                 foreach(var channelUser in mapping?.IrcChannel?.Users)
                 {
                     var userMap = _mappingConfiguration.Users.FirstOrDefault(m => m.IrcNickname.ToLower().Trim() == channelUser.User.NickName.ToLower().Trim());
                     if (userMap != null)
-                        discord.Append($"\r\n* @<{userMap.DiscordUserId}> ({channelUser.User.NickName})");
+                        discord.Append($"\r\n* <@{userMap.DiscordUserId}> ({channelUser.User.NickName})");
                     else
                         irc.Append($"\r\n* {channelUser.User.NickName}");
 
