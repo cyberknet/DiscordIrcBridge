@@ -8,6 +8,7 @@ using DiscordIrcBridge.Configuration;
 using DiscordIrcBridge.Messages;
 using DiscordIrcBridge.Transports.Irc.Formatting;
 using IrcDotNet;
+using Markdig.Syntax.Inlines;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -102,11 +103,11 @@ namespace DiscordIrcBridge.Transports.Discord
                     }
                 }
             }
-            
+
         }
 
         private async Task Client_LogAsync(LogMessage log) => Console.WriteLine(log);
-        
+
 
         private async Task Client_ReadyAsync()
         {
@@ -135,7 +136,7 @@ namespace DiscordIrcBridge.Transports.Discord
                 channel.DiscordChannel = discordChannels.FirstOrDefault(dc => dc.Id == channel.DiscordChannelId);
             }
 
-            
+
             if (Bridge.IrcIsConnected && !_connectMessageSent)
             {
                 OnMessageBroadcast(this, new ConnectMessage());
@@ -178,7 +179,7 @@ namespace DiscordIrcBridge.Transports.Discord
             {
                 await SendMessageToDiscord(textMessage);
             }
-            else 
+            else
             {
                 await SendEventToDiscord(message);
             }
@@ -200,7 +201,7 @@ namespace DiscordIrcBridge.Transports.Discord
             else
             {
                 bool success = true;
-                foreach(var channelMapping in _mappingConfiguration.Channels)
+                foreach (var channelMapping in _mappingConfiguration.Channels)
                 {
                     success &= await SendEventEmbed(eventEmbed, channelMapping);
                 }
@@ -314,7 +315,15 @@ namespace DiscordIrcBridge.Transports.Discord
                 bool sent = false;
                 var socketChannel = channelMapping.DiscordChannel;
                 var webhookClient = channelMapping.DiscordWebHookClient;
+                text = PopulateUserReferences(text, socketChannel);
 
+                char ctcp = (char)0x01;
+                string action = ctcp + "ACTION ";
+                if (text.StartsWith(action) && text.EndsWith(ctcp))
+                {
+                    text = "_" + text.Substring(action.Length, text.Length - action.Length - 1) + "_";
+                }
+                
                 // webhook first
                 var perms = socketChannel.GetPermissionOverwrite(_client.CurrentUser);
                 var canPingEveryone = perms != null && (perms.Value.MentionEveryone == PermValue.Allow);
@@ -338,13 +347,13 @@ namespace DiscordIrcBridge.Transports.Discord
                 {
                     var imc = socketChannel as IMessageChannel;
                     string username = mappedUser != null ? mappedUser.Username : message.User;
-                    string messageText =$"<{username}> {text}";
+                    string messageText = $"<{username}> {text}";
                     if (imc != null)
                     {
                         await imc.SendMessageAsync(text: messageText, allowedMentions: allowedMentions);
                     }
                 }
-                
+
             }
         }
 
@@ -355,7 +364,7 @@ namespace DiscordIrcBridge.Transports.Discord
             // some IRC clients do not use reverse
             blocks.ForEach(b => b.Italic = b.Italic || b.Reverse);
             var mdText = new StringBuilder();
-            for(int i = 0; i < blocks.Count; i++)
+            for (int i = 0; i < blocks.Count; i++)
             {
                 // Default to unstyled blocks when index out of range
                 var block = blocks[i];
@@ -375,6 +384,42 @@ namespace DiscordIrcBridge.Transports.Discord
                 if (block.Italic) mdText.Append("*");
             }
             return mdText.ToString();
+        }
+
+        private string PopulateUserReferences(string message, SocketGuildChannel socketGuildChannel)
+        {
+            var words = message.Split(' ');
+            for (int i = 0; i < words.Length; i++)
+            {
+                var word = words[i];
+                if (word.StartsWith("@"))
+                {
+                    string username = word.Substring(1).ToLower().Trim();
+                    foreach (var mappedUser in _mappingConfiguration.Users)
+                    {
+                        if (username == mappedUser.IrcNickname.ToLower().Trim())
+                        {
+                            word = $"<@{mappedUser.DiscordUserId}>";
+                            break;
+                        }
+                    }
+                    if (word.StartsWith("@"))
+                    {
+                        foreach (var guildUser in socketGuildChannel.Users)
+                        {
+                            if (guildUser.Username.ToLower().Trim() == username)
+                            {
+                                word = $"<@{guildUser.Id}>";
+                                break;
+                            }
+                        }
+                    }
+                    if (word != words[i])
+                        words[i] = word;
+                }
+
+            }
+            return String.Join(' ', words);
         }
 
         private SocketUser GetDiscordUser(string nickname, SocketGuildChannel channel)
